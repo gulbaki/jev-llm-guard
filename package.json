@@ -1,0 +1,46 @@
+{
+  "name": "jev-llm-guard",
+  "version": "0.1.0",
+  "description": "Contextual OWASP LLM guardrail decisions powered by Jev",
+  "type": "module",
+  "main": "./src/index.js",
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "keywords": [
+    "prompt-injection",
+    "llm-security",
+    "guardrails",
+    "ai-safety",
+    "jailbreak-detection",
+    "jev",
+    "typesafe",
+    "owasp",
+    "contextual-guardrail"
+  ],
+  "author": "Baki GUL",
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "jev-guard": "./bin/jev-guard.js"
+  },
+  "files": [
+    "bin/",
+    "src/",
+    "web/",
+    ".env.example"
+  ],
+  "scripts": {
+    "start": "node bin/jev-web.js",
+    "scenarios": "node bin/jev-demo.js",
+    "eval:research": "node bin/jev-research-eval.js",
+    "test": "node --test test/*.test.js",
+    "prepublishOnly": "npm test"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@typesafe-ai/sdk": "^0.6.0",
+    "dotenv": "^18.0.3"
+  }
+}
