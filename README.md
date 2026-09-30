@@ -4,6 +4,9 @@ A contextual LLM guardrail powered by Jev System One. Submit text as user input,
 retrieved content, tool output or model output and receive a local
 `allow` / `review` / `block` decision plus ten OWASP risk assessments.
 
+**[Try the live demo](https://jev-llm-guard.vercel.app)** — enter Turkish or English
+text, select its context, and inspect the decision and JSON result.
+
 The taxonomy follows [OWASP LLM Top 10 2026](https://genai.owasp.org/resource/owasp-genai-llm-top-10-2026/).
 Scores represent **textual risk signals**, not calibrated vulnerability
 probabilities. Application-level risks that cannot be verified from the supplied
