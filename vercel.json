@@ -1,0 +1,12 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "npm ci",
+  "regions": ["fra1"],
+  "functions": {
+    "server.js": {
+      "includeFiles": "web/**",
+      "maxDuration": 40
+    }
+  }
+}

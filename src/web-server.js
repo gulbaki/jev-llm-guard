@@ -25,14 +25,28 @@ function isLocalHost(host) {
   return typeof host === 'string' && /^127\.0\.0\.1(?::\d{1,5})?$/.test(host);
 }
 
+function isAllowedRequest(headers, env) {
+  const { host, origin } = headers;
+  if (!env.VERCEL && !env.JEV_PUBLIC_ORIGIN) {
+    return isLocalHost(host) && (!origin || origin === `http://${host}`);
+  }
+  if (typeof host !== 'string' || typeof origin !== 'string' || origin !== `https://${host}`) return false;
+  const approved = [env.JEV_PUBLIC_ORIGIN, env.VERCEL_URL && `https://${env.VERCEL_URL}`, env.VERCEL_PROJECT_PRODUCTION_URL && `https://${env.VERCEL_PROJECT_PRODUCTION_URL}`];
+  return approved.some((value) => {
+    try {
+      const url = new URL(value);
+      return url.protocol === 'https:' && !url.username && !url.password && url.pathname === '/' && !url.search && !url.hash && url.origin === origin;
+    } catch { return false; }
+  });
+}
+
 export async function handleApiRequest(request, {
   env = process.env,
   evaluate = evaluateGuardrail,
 } = {}) {
   const { method, headers = {}, body } = request;
-  const host = headers.host;
-  if (!isLocalHost(host) || (headers.origin && headers.origin !== `http://${host}`)) {
-    return { status: 403, body: { error: 'Bu istek yerel demodan gelmelidir.' } };
+  if (!isAllowedRequest(headers, env)) {
+    return { status: 403, body: { error: 'Bu istek izin verilen demo adresinden gelmelidir.' } };
   }
   if (method !== 'POST') {
     return { status: 405, body: { error: 'POST kullanın.' } };

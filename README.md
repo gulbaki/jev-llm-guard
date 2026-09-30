@@ -26,6 +26,21 @@ optional trusted task and application context, try examples, and inspect/copy
 JSON results. Credentials remain on the Node server. Each analysis calls Jev.
 The bundled server is a local demo and binds to `127.0.0.1`.
 
+## Vercel deployment
+
+Import this GitHub repository into Vercel. The root `server.js` serves both the
+demo and its API; `vercel.json` includes the browser files in the Node function.
+Set server environment variables `TYPESAFE_API_KEY`, `TYPESAFE_BASE_URL`,
+`TYPESAFE_DEFAULT_MODEL`, and `JEV_PUBLIC_ORIGIN` (the full HTTPS demo origin).
+The exact deployment URL supplied by Vercel is also accepted for previews.
+Never expose the key as a public environment variable or commit `.env`.
+
+For a public demo, configure a Vercel WAF rate limit on POST `/api/evaluate`
+(for example 10 requests per minute per IP). Platform rate limits are regional
+and are not a global Jev spending cap; set a usage budget with the API provider.
+Requests outside the approved origin are rejected. Origin validation is a
+browser boundary, not authentication for a public endpoint.
+
 ## Library
 
 The package is prepared for npm publication; until it is published, install a

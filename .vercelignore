@@ -1,0 +1,7 @@
+.env
+.env.*
+out/
+research/
+docs/
+test/
+*.tgz

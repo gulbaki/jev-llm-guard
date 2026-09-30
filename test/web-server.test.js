@@ -36,6 +36,29 @@ test('keeps upstream details and API keys out of error responses', async () => {
   assert.doesNotMatch(JSON.stringify(response.body), /test-key|upstream detail/);
 });
 
+test('accepts only explicitly configured HTTPS deployment origins', async () => {
+  const liveEnv = { ...env, VERCEL: '1', JEV_PUBLIC_ORIGIN: 'https://jev-llm-guard.vercel.app', VERCEL_URL: 'guard-preview.vercel.app' };
+  const liveRequest = (host, origin) => request({ text: 'hello' }, { headers: { host, origin, 'content-type': 'application/json' } });
+  const evaluate = async () => ({ action: 'allow' });
+  for (const host of ['jev-llm-guard.vercel.app', 'guard-preview.vercel.app']) {
+    assert.equal((await handleApiRequest(liveRequest(host, `https://${host}`), { env: liveEnv, evaluate })).status, 200);
+  }
+  for (const [host, origin] of [
+    ['attacker.vercel.app', 'https://attacker.vercel.app'],
+    ['jev-llm-guard.vercel.app', 'https://attacker.example'],
+    ['jev-llm-guard.vercel.app', undefined],
+    ['jev-llm-guard.vercel.app', 'http://jev-llm-guard.vercel.app'],
+    ['127.0.0.1:4173', 'http://127.0.0.1:4173'],
+  ]) {
+    assert.equal((await handleApiRequest(liveRequest(host, origin), { env: liveEnv, evaluate })).status, 403);
+  }
+});
+
+test('Vercel without an approved deployment origin rejects requests before evaluation', async () => {
+  const result = await handleApiRequest(request({ text: 'hello' }), { env: { ...env, VERCEL: '1' }, evaluate: async () => { throw new Error('unexpected call'); } });
+  assert.equal(result.status, 403);
+});
+
 test('malformed request URLs return 400 and the demo can still serve a subsequent request', async () => {
   const { createDemoServer } = await import('../src/web-server.js');
   const server = createDemoServer({ env });

@@ -7,3 +7,5 @@ out/
 .vercel/
 .DS_Store
 *.tgz
+.vercel
+.env*
