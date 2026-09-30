@@ -1,4 +1,4 @@
-export const POLICY_VERSION = '1.1';
+export const POLICY_VERSION = '1.2';
 export const RISK_DEFINITIONS = [
   ['LLM01', 'Prompt Injection', 'Prompt injection', 'Active instruction to override the assigned task, impersonate a trusted role, or cross the instruction/data boundary.'],
   ['LLM02', 'Sensitive Information Disclosure', 'Hassas bilgi ifşası', 'Active request to disclose credentials, confidential or personal data, or such disclosure in generated output. Public facts and dummy placeholders are not secrets.'],

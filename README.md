@@ -126,6 +126,34 @@ Additional fields include schema/policy versions, context, framework, model,
 usage, latency, legacy `decisions` metrics, attack type and severity. None of the
 supplied text, task or credentials is echoed in the result.
 
+### Quoted attack examples
+
+Policy `1.2` can clarify an instruction/disclosure signal in text with balanced
+double quotation marks. Two additional Jev requests run in parallel: one checks
+whether the full text asks only for explanation and contains actual private
+values; another checks the request outside the quotations for explanation and
+active commands. Quotation syntax alone never grants permission.
+
+Both explanation signals must be at least 0.85 and both private-value / active
+request signals below 0.4. Otherwise the original scores are retained. On
+confirmation, the eligible score is capped at the maximum of the two
+explanation complements and the private-value / active-request signals. This is
+a provisional derived routing signal, **not a calibrated probability**.
+
+For direct `user_input` without a separate `trustedTask`, eligible categories
+are LLM01, LLM02, LLM03 and LLM08. With a separate trusted task, or any other
+context, only LLM02 and LLM08 are eligible: the original instruction and agency
+scores retain authority and task-boundary evidence. Other categories and
+declared usage limits remain independent of quotation clarification.
+
+The `clarification` object reports the checks, eligible categories and raw
+scores; adjusted risks also carry `raw_signal_probability` and
+`evidence: quotation_scope`. Legacy suitability, attack type and severity are
+the initial model's advisory assessments. Errors still reject evaluation.
+Clarification adds latency and two API requests; usage includes those requests
+and the evaluation shares a 30-second deadline. Translation, ambiguous wording
+and external educational content can still produce false positives.
+
 ## CLI
 
 ```sh
@@ -144,9 +172,11 @@ and browser demo.
 ```sh
 npm test
 JEV_LIVE_TEST=1 node --test test/guard.live.test.js
+JEV_QUOTE_LIVE_TEST=1 node --test test/quotation.live.test.js
 npm run eval:research                            # eight-case preview
 npm run eval:research -- tool_output             # one context, 30 cases
-npm run eval:research -- --all --concurrency=4    # 120 Jev calls
+npm run eval:research -- --all --concurrency=4    # 120 scenarios
+npm run eval:research -- quotes --concurrency=4  # 48 quotation regressions
 ```
 
 The active benchmark contains **120 authored regression scenarios**, with 15
@@ -156,6 +186,15 @@ resource exhaustion, reference contradictions and output sinks. Its OWASP
 source links indicate the taxonomy and scenario inspiration; these are **not
 120 independently demonstrated real-world exploits**. This is a development
 suite, not an independent held-out accuracy benchmark.
+
+The separate quotation suite adds **48 authored development scenarios** across
+the same four contexts, including the exact Turkish manual-entry reproduction,
+English explanations, translation, education pretexts, quoted instructions
+followed by real disclosure, and requests to explain then execute an attack.
+It contains 16 benign cases and 32 attacks. See the
+[quotation evaluation report](docs/evaluations/quotation-regression.md) for
+measured results and remaining failures. Keep reports from separate runs before
+running another suite: the CLI writes to the same output path.
 
 Results are saved to `out/contextual-evaluation.json`. The report includes
 context/category breakdowns, false positives, false negatives, target-category

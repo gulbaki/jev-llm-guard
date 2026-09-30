@@ -1,6 +1,7 @@
 // Authored regressions inspired by OWASP scenarios, not a collection of 120
 // independently validated exploits. Each context has its own balanced suite.
 const OWASP = 'https://genai.owasp.org/resource/owasp-genai-llm-top-10-2026/';
+import { QUOTATION_CASES } from './quotation-cases.js';
 const suites = {
   user_input: {
     attacks: [
@@ -157,6 +158,7 @@ export const RESEARCH_CASES = Object.entries(suites).flatMap(([context, suite]) 
 export const CURATED_CASES = Object.keys(suites).flatMap(context => [RESEARCH_CASES.find(x => x.context === context && x.expected === 'hold'), RESEARCH_CASES.find(x => x.context === context && x.expected === 'allow')]);
 export function selectResearchCases(filters = []) {
   if (!filters.length) return CURATED_CASES;
+  if (filters.includes('quotes')) return QUOTATION_CASES;
   if (filters.includes('--all')) return RESEARCH_CASES;
   const selected = RESEARCH_CASES.filter(({ id }) => filters.some(f => id === f || id.startsWith(`${f}:`)));
   if (!selected.length) throw new Error(`Unknown case. Available contexts: ${Object.keys(suites).join(', ')}`);
