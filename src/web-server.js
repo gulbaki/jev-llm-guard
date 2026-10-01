@@ -46,40 +46,40 @@ export async function handleApiRequest(request, {
 } = {}) {
   const { method, headers = {}, body } = request;
   if (!isAllowedRequest(headers, env)) {
-    return { status: 403, body: { error: 'Bu istek izin verilen demo adresinden gelmelidir.' } };
+    return { status: 403, body: { error: 'This request must come from an approved demo origin.' } };
   }
   if (method !== 'POST') {
-    return { status: 405, body: { error: 'POST kullanın.' } };
+    return { status: 405, body: { error: 'Use POST.' } };
   }
   if (!/^application\/json(?:\s*;|$)/i.test(headers['content-type'] ?? '')) {
-    return { status: 415, body: { error: 'JSON gövdesi gerekli.' } };
+    return { status: 415, body: { error: 'A JSON request body is required.' } };
   }
   if (typeof body !== 'string' || Buffer.byteLength(body) > MAX_BODY_BYTES) {
-    return { status: 413, body: { error: 'Metin çok uzun. En fazla 20.000 karakter girin.' } };
+    return { status: 413, body: { error: 'Text is too long. Enter at most 20,000 characters.' } };
   }
 
   let payload;
   try {
     payload = JSON.parse(body);
   } catch {
-    return { status: 400, body: { error: 'Geçerli bir JSON gönderin.' } };
+    return { status: 400, body: { error: 'Send valid JSON.' } };
   }
   const text = payload?.text;
   if (typeof text !== 'string' || !text.trim()) {
-    return { status: 400, body: { error: 'Denemek için bir metin girin.' } };
+    return { status: 400, body: { error: 'Enter text to analyze.' } };
   }
   if (text.length > MAX_TEXT_LENGTH) {
-    return { status: 413, body: { error: 'Metin çok uzun. En fazla 20.000 karakter girin.' } };
+    return { status: 413, body: { error: 'Text is too long. Enter at most 20,000 characters.' } };
   }
   let input;
   try {
-    if (payload.sourceContext !== undefined) throw new Error('sourceContext kaldırıldı; context alanını kullanın.');
+    if (payload.sourceContext !== undefined) throw new Error('sourceContext was removed; use the context field.');
     input = validateInput(payload);
   } catch (error) {
     return { status: 400, body: { error: error.message } };
   }
   if (!env.TYPESAFE_API_KEY) {
-    return { status: 503, body: { error: 'Sunucuda TYPESAFE_API_KEY ayarlanmamış.' } };
+    return { status: 503, body: { error: 'TYPESAFE_API_KEY is not configured on the server.' } };
   }
 
   try {
@@ -90,7 +90,7 @@ export async function handleApiRequest(request, {
     });
     return { status: 200, body: result };
   } catch {
-    return { status: 502, body: { error: 'Jev isteği başarısız. Sunucu ayarlarını ve API erişimini kontrol edin.' } };
+    return { status: 502, body: { error: 'Jev request failed. Check server settings and API access.' } };
   }
 }
 
@@ -120,7 +120,7 @@ export function createDemoServer({ env = process.env, evaluate = evaluateGuardra
   return createServer(async (request, response) => {
     let path;
     try { path = new URL(request.url ?? '/', 'http://127.0.0.1').pathname; }
-    catch { json(response, 400, { error: 'Geçersiz istek adresi.' }); return; }
+    catch { json(response, 400, { error: 'Invalid request URL.' }); return; }
     if (request.method === 'GET' && STATIC_FILES.has(path)) {
       const [filename, contentType] = STATIC_FILES.get(path);
       try {
@@ -133,7 +133,7 @@ export function createDemoServer({ env = process.env, evaluate = evaluateGuardra
         });
         response.end(content);
       } catch {
-        json(response, 500, { error: 'Demo dosyası açılamadı.' });
+        json(response, 500, { error: 'Could not load the demo file.' });
       }
       return;
     }
@@ -142,13 +142,13 @@ export function createDemoServer({ env = process.env, evaluate = evaluateGuardra
       try {
         body = await readRequestBody(request);
       } catch (error) {
-        json(response, error instanceof RangeError ? 413 : 400, { error: 'İstek okunamadı veya çok uzun.' });
+        json(response, error instanceof RangeError ? 413 : 400, { error: 'Could not read the request or it is too large.' });
         return;
       }
       const result = await handleApiRequest({ method: request.method, headers: request.headers, body }, { env, evaluate });
       json(response, result.status, result.body);
       return;
     }
-    json(response, 404, { error: 'Sayfa bulunamadı.' });
+    json(response, 404, { error: 'Page not found.' });
   });
 }

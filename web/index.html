@@ -1,87 +1,87 @@
 <!doctype html>
-<html lang="tr">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f6f5f1">
-  <title>Jev Guard — Metin analizi</title>
+  <title>Jev Guard — Text analysis</title>
   <link rel="stylesheet" href="/style.css">
   <script src="/app.js" type="module"></script>
 </head>
 <body>
   <header class="app-bar">
     <div class="bar-inner">
-      <a class="wordmark" href="/" aria-label="Jev Guard ana sayfa">jev<span class="wordmark-slash">/</span><strong>guard</strong></a>
-      <span class="app-location">Test alanı</span>
+      <a class="wordmark" href="/" aria-label="Jev Guard home">jev<span class="wordmark-slash">/</span><strong>guard</strong></a>
+      <span class="app-location">Playground</span>
       <span class="service">Jev System One</span>
     </div>
   </header>
   <main class="shell">
     <header class="page-heading">
-      <div><h1>Metin analizi</h1><p>Metni ve kaynağını belirt. Kararı ve risk sinyallerini gör.</p></div>
+      <div><h1>Text analysis</h1><p>Enter text and choose its source. See the decision and risk signals.</p></div>
       <span class="framework-label">OWASP LLM · 2026</span>
     </header>
     <div class="workspace">
       <section class="editor-pane" aria-labelledby="input-title">
         <form id="guard-form">
           <div class="section-heading">
-            <h2 id="input-title">Girdi</h2>
-            <label class="visually-hidden" for="example-picker">Örnek yükle</label>
+            <h2 id="input-title">Input</h2>
+            <label class="visually-hidden" for="example-picker">Load an example</label>
             <select id="example-picker" class="example-picker">
-              <option value="">Örnek yükle…</option>
-              <option value="safe">Normal istek</option>
-              <option value="override">Talimat aşma</option>
-              <option value="document">Dış belgede saldırı</option>
-              <option value="tool">Araç yönlendirme</option>
-              <option value="output">Tehlikeli HTML çıktısı</option>
-              <option value="quote">Eğitim amaçlı alıntı</option>
+              <option value="">Load an example…</option>
+              <option value="safe">Normal request</option>
+              <option value="override">Instruction override</option>
+              <option value="document">Attack in a document</option>
+              <option value="tool">Tool hijacking</option>
+              <option value="output">Unsafe HTML output</option>
+              <option value="quote">Educational quotation</option>
             </select>
           </div>
           <div class="source-field">
-            <label for="source-context">Kaynak</label>
+            <label for="source-context">Source</label>
             <select id="source-context" name="context">
-              <option value="user_input">Kullanıcı girdisi</option>
-              <option value="retrieved_content">Dış belge / web içeriği</option>
-              <option value="tool_output">Araç çıktısı</option>
-              <option value="model_output">Model cevabı</option>
+              <option value="user_input">User input</option>
+              <option value="retrieved_content">Document / web content</option>
+              <option value="tool_output">Tool output</option>
+              <option value="model_output">Model output</option>
             </select>
           </div>
-          <p id="context-note" class="field-note">Kullanıcının asistana verdiği doğrudan istek.</p>
-          <label class="visually-hidden" for="prompt-text">Analiz edilecek metin</label>
-          <textarea id="prompt-text" name="text" maxlength="20000" placeholder="Analiz etmek istediğin metni buraya yaz veya yapıştır." spellcheck="false" required></textarea>
-          <div class="editor-foot"><span>Türkçe veya İngilizce metin</span><span id="char-count">0 / 20.000</span></div>
+          <p id="context-note" class="field-note">A direct request from the user to the assistant.</p>
+          <label class="visually-hidden" for="prompt-text">Text to analyze</label>
+          <textarea id="prompt-text" name="text" maxlength="20000" placeholder="Type or paste the text you want to analyze." spellcheck="false" required></textarea>
+          <div class="editor-foot"><span>English or Turkish text</span><span id="char-count">0 / 20,000</span></div>
           <details id="task-settings" class="disclosure input-settings">
-            <summary>Görev ve uygulama bilgisi <span>İsteğe bağlı</span></summary>
+            <summary>Task and application context <span>Optional</span></summary>
             <div class="disclosure-body">
-              <label class="field-label" for="trusted-task">Uygulamanın gerçek görevi</label>
-              <input id="trusted-task" maxlength="2000" placeholder="Örn. Kaynaktaki ürün bilgilerini özetle.">
-              <p class="field-note">Görev uygulamadan gelir. İncelenen metnin içindeki talimatlar bu görevi değiştiremez.</p>
-              <label class="field-label" for="app-context">Uygulama bilgisi (JSON)</label>
+              <label class="field-label" for="trusted-task">Trusted application task</label>
+              <input id="trusted-task" maxlength="2000" placeholder="e.g. Summarize product information from the source.">
+              <p class="field-note">The task comes from the application. Instructions inside the analyzed text cannot change it.</p>
+              <label class="field-label" for="app-context">Application context (JSON)</label>
               <textarea id="app-context" maxlength="8000" placeholder='{"outputSink":"html"}' spellcheck="false"></textarea>
-              <p class="field-note">Çıktı hedefini, izinli eylemleri veya doğrulama referanslarını ekleyebilirsin. API anahtarı ve gizli sistem promptu ekleme.</p>
+              <p class="field-note">Add the output sink, allowed actions, or reference facts. Do not include API keys or private system prompts.</p>
             </div>
           </details>
-          <div class="form-actions"><button id="analyze-button" type="submit" class="primary-button"><span id="button-label">Analiz et</span><span class="button-arrow" aria-hidden="true">↗</span></button><span class="form-hint">Karar, seçtiğin kaynağa göre verilir.</span></div>
+          <div class="form-actions"><button id="analyze-button" type="submit" class="primary-button"><span id="button-label">Analyze</span><span class="button-arrow" aria-hidden="true">↗</span></button><span class="form-hint">The decision uses the selected source.</span></div>
         </form>
       </section>
       <section class="result-pane" aria-labelledby="output-title">
-        <div class="section-heading"><h2 id="output-title">Sonuç</h2><span id="run-status" class="run-status">Henüz çalıştırılmadı</span></div>
-        <div id="empty-state" class="placeholder-state"><h3>Analiz bekleniyor</h3><p>Metnini ekleyip <strong>Analiz et</strong>’i seç.<br>İstersen bir örnek yükleyerek başlayabilirsin.</p><div class="placeholder-rule"></div><p class="small-note">On OWASP başlığı değerlendirilir. Metinden anlaşılamayan başlıklar için eksik bağlam belirtilir.</p></div>
-        <div id="loading-state" class="placeholder-state" role="status" hidden><div class="loading-line"><span class="spinner" aria-hidden="true"></span><h3>Değerlendiriliyor</h3></div><p>Jev yanıtı bekleniyor.</p></div>
-        <div id="error-state" class="error-state" role="alert" hidden><h3>Analiz tamamlanamadı</h3><p id="error-message"></p><p class="small-note">Metni ve sunucu bağlantısını kontrol edip tekrar deneyebilirsin.</p></div>
+        <div class="section-heading"><h2 id="output-title">Result</h2><span id="run-status" class="run-status">Not run yet</span></div>
+        <div id="empty-state" class="placeholder-state"><h3>Ready to analyze</h3><p>Enter your text and select <strong>Analyze</strong>.<br>You can also start with an example.</p><div class="placeholder-rule"></div><p class="small-note">Ten OWASP categories are assessed. Categories that need more evidence are marked as missing context.</p></div>
+        <div id="loading-state" class="placeholder-state" role="status" hidden><div class="loading-line"><span class="spinner" aria-hidden="true"></span><h3>Evaluating</h3></div><p>Waiting for Jev.</p></div>
+        <div id="error-state" class="error-state" role="alert" hidden><h3>Analysis failed</h3><p id="error-message"></p><p class="small-note">Check the text and server connection, then try again.</p></div>
         <div id="result-state" aria-live="polite" hidden>
           <div class="verdict"><span id="verdict-label" class="decision-code"></span><h3 id="verdict-title"></h3></div>
           <p id="verdict-note" class="verdict-note"></p>
-          <div class="assessment-heading"><h4>OWASP değerlendirmesi</h4><span id="risk-summary"></span></div>
-          <table class="risk-table"><thead><tr><th scope="col">Risk</th><th scope="col">Durum</th><th scope="col" class="score-column">Sinyal</th></tr></thead><tbody id="risk-list"></tbody></table>
-          <p class="table-note">Yüzdeler metindeki sinyali gösterir. “Bağlam eksik” olan başlıklar güvenli sayılmaz.</p>
-          <dl class="run-details"><div><dt>Kaynak</dt><dd id="result-context"></dd></div><div><dt>Model</dt><dd id="model-name"></dd></div><div><dt>Süre</dt><dd id="latency"></dd></div><div><dt>Token · giriş / çıkış</dt><dd id="tokens"></dd></div></dl>
-          <details class="disclosure"><summary>Değerlendirme sınırları</summary><ul id="limits" class="limits-list"></ul></details>
-          <details class="disclosure"><summary>Ham sonuç <span>JSON</span></summary><div class="json-toolbar"><button type="button" class="text-button" id="copy-json">JSON’u kopyala</button></div><pre id="json-result"></pre></details>
+          <div class="assessment-heading"><h4>OWASP assessment</h4><span id="risk-summary"></span></div>
+          <table class="risk-table"><thead><tr><th scope="col">Risk</th><th scope="col">Status</th><th scope="col" class="score-column">Signal</th></tr></thead><tbody id="risk-list"></tbody></table>
+          <p class="table-note">Percentages represent signals in the text. “Missing context” does not mean safe.</p>
+          <dl class="run-details"><div><dt>Source</dt><dd id="result-context"></dd></div><div><dt>Model</dt><dd id="model-name"></dd></div><div><dt>Time</dt><dd id="latency"></dd></div><div><dt>Tokens · input / output</dt><dd id="tokens"></dd></div></dl>
+          <details class="disclosure"><summary>Assessment limits</summary><ul id="limits" class="limits-list"></ul></details>
+          <details class="disclosure"><summary>Raw result <span>JSON</span></summary><div class="json-toolbar"><button type="button" class="text-button" id="copy-json">Copy JSON</button></div><pre id="json-result"></pre></details>
         </div>
       </section>
     </div>
-    <footer><span>API anahtarı sunucuda kalır.</span><span>Metin sinyallerinin değerlendirilmesi tam bir uygulama denetimi değildir.</span></footer>
+    <footer><span>The API key stays on the server.</span><span>Text analysis is not a full application security audit.</span></footer>
   </main>
 </body>
 </html>

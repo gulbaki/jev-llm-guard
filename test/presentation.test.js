@@ -24,7 +24,7 @@ test('a deterministic limit stays an actionable signal despite having no probabi
     LLM06: { label: 'Kaynak tüketimi', status: 'signal', signal_probability: null, evidence: 'declared_usage_limit' },
   }});
   assert.equal(view.rows[0].status, 'signal');
-  assert.equal(view.rows[0].score, 'Limit dolu');
+  assert.equal(view.rows[0].score, 'Limit reached');
   assert.equal(view.counts.signals, 1);
   assert.equal(view.action, 'block');
 });
@@ -33,7 +33,7 @@ test('an allowing verdict explicitly preserves the need to assess missing contex
   const view = await build({ action: 'allow', risks: {
     LLM04: { label: 'Tedarik zinciri', status: 'needs_context', signal_probability: null },
   }});
-  assert.match(view.note, /eksik bağlam/i);
+  assert.match(view.note, /missing context/i);
   assert.equal(view.action, 'allow');
   const invalid = await build({ action: 'unknown', risks: {} });
   assert.equal(invalid.action, 'review');

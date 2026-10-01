@@ -103,7 +103,7 @@ export async function evaluateGuardrail(rawInput, {
   const policy = applyPolicy(input, probabilities);
   if (clarification?.applied) {
     for (const id of scopedRisks) policy.risks[id] = { ...policy.risks[id], raw_signal_probability: clarification.raw_probabilities[id], evidence: 'quotation_scope' };
-    policy.limits.push('Alıntı açıklaması ayrı değerlendirildi; ham skorlar clarification alanında korunur. Açık görev veya dış kaynak varsa talimat ve yetki sinyalleri azaltılmaz.');
+    policy.limits.push('Quotation analysis was assessed separately; raw scores are preserved in clarification. Instruction and agency signals are retained for a separate trusted task or external source.');
   }
   return {
     schema_version: '1.0', policy_version: POLICY_VERSION, framework: 'OWASP-LLM-2026', context: input.context,

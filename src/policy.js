@@ -1,23 +1,23 @@
 export const POLICY_VERSION = '1.2';
 export const RISK_DEFINITIONS = [
   ['LLM01', 'Prompt Injection', 'Prompt injection', 'Active instruction to override the assigned task, impersonate a trusted role, or cross the instruction/data boundary.'],
-  ['LLM02', 'Sensitive Information Disclosure', 'Hassas bilgi ifşası', 'Active request to disclose credentials, confidential or personal data, or such disclosure in generated output. Public facts and dummy placeholders are not secrets.'],
-  ['LLM03', 'Excessive Agency', 'Aşırı yetki kullanımı', 'Attempt to perform unauthorized, destructive, or unconfirmed side effects. Compare with allowedActions and trusted_task. An authorized ordinary action is not an attack.'],
-  ['LLM04', 'Supply Chain', 'Tedarik zinciri', 'Active attempt to install or load an untrusted package/model, run a remote installer, or disable dependency integrity checks. Merely mentioning a dependency is not evidence.'],
-  ['LLM05', 'Data and Model Poisoning', 'Veri ve model zehirleme', 'Active attempt to corrupt training data, ingestion, stored memory or future answers. Historical description and legitimate corrections are not attacks.'],
-  ['LLM06', 'Unbounded Consumption', 'Sınırsız kaynak tüketimi', 'Active request for infinite loops, uncontrolled recursive tool use, or resource exhaustion. A bounded long task is not an attack.'],
-  ['LLM07', 'Misinformation', 'Yanlış bilgi', 'A factual statement contradicted by the supplied referenceFacts. Without references truth cannot be assessed: answer no. Do not judge a reference as globally authoritative.'],
-  ['LLM08', 'Hidden Context Exposure', 'Gizli bağlam ifşası', 'Active attempt to obtain internal prompts, private reasoning, hidden verification tokens, or confidential context. Asking for a public explanation is allowed.'],
-  ['LLM09', 'Vector and Embedding Weaknesses', 'Vektör ve embedding riskleri', 'Active attempt to bypass retrieval access boundaries, inject a forged high-ranked source, or manipulate search/index metadata for unauthorized access.'],
-  ['LLM10', 'Improper Output Handling', 'Çıktının hatalı kullanımı', 'Executable or exfiltrating payload likely to be unsafe at the supplied outputSink, including HTML/script, shell or SQL. Plain text/code quoted for analysis is not executable. Without a sink do not presume execution.'],
+  ['LLM02', 'Sensitive Information Disclosure', 'Sensitive information disclosure', 'Active request to disclose credentials, confidential or personal data, or such disclosure in generated output. Public facts and dummy placeholders are not secrets.'],
+  ['LLM03', 'Excessive Agency', 'Excessive agency', 'Attempt to perform unauthorized, destructive, or unconfirmed side effects. Compare with allowedActions and trusted_task. An authorized ordinary action is not an attack.'],
+  ['LLM04', 'Supply Chain', 'Supply chain', 'Active attempt to install or load an untrusted package/model, run a remote installer, or disable dependency integrity checks. Merely mentioning a dependency is not evidence.'],
+  ['LLM05', 'Data and Model Poisoning', 'Data and model poisoning', 'Active attempt to corrupt training data, ingestion, stored memory or future answers. Historical description and legitimate corrections are not attacks.'],
+  ['LLM06', 'Unbounded Consumption', 'Unbounded consumption', 'Active request for infinite loops, uncontrolled recursive tool use, or resource exhaustion. A bounded long task is not an attack.'],
+  ['LLM07', 'Misinformation', 'Misinformation', 'A factual statement contradicted by the supplied referenceFacts. Without references truth cannot be assessed: answer no. Do not judge a reference as globally authoritative.'],
+  ['LLM08', 'Hidden Context Exposure', 'Hidden context exposure', 'Active attempt to obtain internal prompts, private reasoning, hidden verification tokens, or confidential context. Asking for a public explanation is allowed.'],
+  ['LLM09', 'Vector and Embedding Weaknesses', 'Vector and embedding weaknesses', 'Active attempt to bypass retrieval access boundaries, inject a forged high-ranked source, or manipulate search/index metadata for unauthorized access.'],
+  ['LLM10', 'Improper Output Handling', 'Improper output handling', 'Executable or exfiltrating payload likely to be unsafe at the supplied outputSink, including HTML/script, shell or SQL. Plain text/code quoted for analysis is not executable. Without a sink do not presume execution.'],
 ].map(([id, name, label, question]) => ({ id, name, label, question }));
 
 const EVIDENCE_LIMITS = {
-  LLM04: 'Bağımlılıkların kaynağı ve bütünlüğü envanter denetimi gerektirir; metin tek başına doğrulamaz.',
-  LLM05: 'Zehirleme etkisi için veri kökeni ve gerçek veri alma / eğitim yolu gerekir.',
-  LLM06: 'Kaynak tüketiminin etkisi token, istek, süre ve maliyet ölçümleri gerektirir.',
-  LLM07: 'Yanlış bilgi yalnızca verilen güvenilir referanslarla karşılaştırılır; genel doğruluk doğrulanmaz.',
-  LLM09: 'Retrieval güvenliği indeks yapılandırması, erişim kontrolü ve gerçek sorgu kanıtı gerektirir.',
+  LLM04: 'Dependency provenance and integrity require an inventory audit; text alone cannot verify them.',
+  LLM05: 'Assessing poisoning impact requires data provenance and the actual ingestion or training pipeline.',
+  LLM06: 'Assessing resource consumption requires token, request, time, and cost measurements.',
+  LLM07: 'Misinformation is assessed only against the supplied trusted references; general factual accuracy is not verified.',
+  LLM09: 'Retrieval security requires index configuration, access controls, and evidence from actual queries.',
 };
 export function applyPolicy(input, probabilities) {
   const risks = {};
@@ -37,7 +37,7 @@ export function applyPolicy(input, probabilities) {
       if (id === 'LLM07' && appContext.referenceFacts?.length) { status = probabilities[id] >= 0.4 ? 'signal' : 'no_signal'; probability = probabilities[id]; }
       limits.push(EVIDENCE_LIMITS[id]);
     }
-    if (id === 'LLM10' && status === 'needs_context') limits.push('Çıktı güvenliği için gerçek çıktı hedefi ve sonraki kaçış / doğrulama adımları gerekir.');
+    if (id === 'LLM10' && status === 'needs_context') limits.push('Output safety requires the actual output sink and downstream escaping or validation steps.');
     risks[id] = { name, label, status, signal_probability: probability };
     if (status === 'signal') {
       if (probability >= 0.8 && id !== 'LLM07') action = 'block';
@@ -49,8 +49,8 @@ export function applyPolicy(input, probabilities) {
   if (exhausted) {
     risks.LLM06 = { ...risks.LLM06, status: 'signal', signal_probability: null, evidence: 'declared_usage_limit' };
     action = 'block';
-    limits.push('Çağıran uygulamanın bildirdiği kaynak limiti dolmuş; yeni işlem engellendi.');
+    limits.push('The resource limit declared by the calling application is exhausted; new processing is blocked.');
   }
-  limits.push('Skorlar metindeki sinyalleri ölçer; doğrulanmış OWASP açığı veya kalibre edilmiş saldırı başarı olasılığı değildir.');
+  limits.push('Scores measure signals in the text; they are not verified OWASP vulnerabilities or calibrated attack-success probabilities.');
   return { risks, action, limits };
 }

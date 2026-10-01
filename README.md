@@ -24,7 +24,7 @@ cp .env.example .env
 npm start
 ```
 
-Open http://127.0.0.1:4173. The Turkish demo lets you select the source, supply an
+Open http://127.0.0.1:4173. The English demo lets you select the source, supply an
 optional trusted task and application context, try examples, and inspect/copy
 JSON results. Credentials remain on the Node server. Each analysis calls Jev.
 The bundled server is a local demo and binds to `127.0.0.1`.
