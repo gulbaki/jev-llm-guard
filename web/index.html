@@ -62,13 +62,14 @@
             </div>
           </details>
           <div class="form-actions"><button id="analyze-button" type="submit" class="primary-button"><span id="button-label">Analyze</span><span class="button-arrow" aria-hidden="true">↗</span></button><span class="form-hint">The decision uses the selected source.</span></div>
+          <p class="field-note">Public demo: 5 analyses per minute and 20 per day per IP. Shared daily limit: 500. Daily limits reset at 00:00 UTC.</p>
         </form>
       </section>
       <section class="result-pane" aria-labelledby="output-title">
         <div class="section-heading"><h2 id="output-title">Result</h2><span id="run-status" class="run-status">Not run yet</span></div>
         <div id="empty-state" class="placeholder-state"><h3>Ready to analyze</h3><p>Enter your text and select <strong>Analyze</strong>.<br>You can also start with an example.</p><div class="placeholder-rule"></div><p class="small-note">Ten OWASP categories are assessed. Categories that need more evidence are marked as missing context.</p></div>
         <div id="loading-state" class="placeholder-state" role="status" hidden><div class="loading-line"><span class="spinner" aria-hidden="true"></span><h3>Evaluating</h3></div><p>Waiting for Jev.</p></div>
-        <div id="error-state" class="error-state" role="alert" hidden><h3>Analysis failed</h3><p id="error-message"></p><p class="small-note">Check the text and server connection, then try again.</p></div>
+        <div id="error-state" class="error-state" role="alert" hidden><h3>Analysis unavailable</h3><p id="error-message"></p></div>
         <div id="result-state" aria-live="polite" hidden>
           <div class="verdict"><span id="verdict-label" class="decision-code"></span><h3 id="verdict-title"></h3></div>
           <p id="verdict-note" class="verdict-note"></p>

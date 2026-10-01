@@ -2,6 +2,7 @@ import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { evaluateGuardrail } from './guard.js';
 import { validateInput } from './context.js';
+import { createDemoQuota } from './demo-quota.js';
 
 const MAX_TEXT_LENGTH = 20_000;
 const MAX_BODY_BYTES = 128_000;
@@ -9,14 +10,16 @@ const STATIC_FILES = new Map([
   ['/', ['index.html', 'text/html; charset=utf-8']],
   ['/app.js', ['app.js', 'text/javascript; charset=utf-8']],
   ['/view.js', ['view.js', 'text/javascript; charset=utf-8']],
+  ['/api.js', ['api.js', 'text/javascript; charset=utf-8']],
   ['/style.css', ['style.css', 'text/css; charset=utf-8']],
 ]);
 
-function json(response, status, body) {
+function json(response, status, body, headers = {}) {
   response.writeHead(status, {
     'content-type': 'application/json; charset=utf-8',
     'cache-control': 'no-store',
     'x-content-type-options': 'nosniff',
+    ...headers,
   });
   response.end(JSON.stringify(body));
 }
@@ -43,6 +46,7 @@ function isAllowedRequest(headers, env) {
 export async function handleApiRequest(request, {
   env = process.env,
   evaluate = evaluateGuardrail,
+  reserveQuota = createDemoQuota({ env }),
 } = {}) {
   const { method, headers = {}, body } = request;
   if (!isAllowedRequest(headers, env)) {
@@ -83,6 +87,20 @@ export async function handleApiRequest(request, {
   }
 
   try {
+    const quota = await reserveQuota(request);
+    if (!quota?.allowed) {
+      const messages = {
+        ip_minute: 'Too many analyses. Wait a minute and try again.',
+        ip_daily: 'Daily demo limit reached. Try again tomorrow.',
+        global_daily: 'The demo has reached its daily analysis limit. Try again tomorrow.',
+      };
+      return { status: 429, headers: { 'retry-after': String(quota.retryAfter) }, body: { error: messages[quota.scope], code: `${quota.scope}_limit`, retry_after_seconds: quota.retryAfter } };
+    }
+  } catch {
+    return { status: 503, body: { error: 'Demo usage limits are temporarily unavailable. Please try again later.' } };
+  }
+
+  try {
     const result = await evaluate(input, {
       apiKey: env.TYPESAFE_API_KEY,
       baseURL: env.TYPESAFE_BASE_URL,
@@ -116,7 +134,7 @@ function readRequestBody(request) {
   });
 }
 
-export function createDemoServer({ env = process.env, evaluate = evaluateGuardrail } = {}) {
+export function createDemoServer({ env = process.env, evaluate = evaluateGuardrail, reserveQuota = createDemoQuota({ env }) } = {}) {
   return createServer(async (request, response) => {
     let path;
     try { path = new URL(request.url ?? '/', 'http://127.0.0.1').pathname; }
@@ -145,8 +163,8 @@ export function createDemoServer({ env = process.env, evaluate = evaluateGuardra
         json(response, error instanceof RangeError ? 413 : 400, { error: 'Could not read the request or it is too large.' });
         return;
       }
-      const result = await handleApiRequest({ method: request.method, headers: request.headers, body }, { env, evaluate });
-      json(response, result.status, result.body);
+      const result = await handleApiRequest({ method: request.method, headers: request.headers, body, remoteAddress: request.socket?.remoteAddress }, { env, evaluate, reserveQuota });
+      json(response, result.status, result.body, result.headers);
       return;
     }
     json(response, 404, { error: 'Page not found.' });

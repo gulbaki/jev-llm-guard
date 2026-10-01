@@ -41,7 +41,7 @@ test('accepts only explicitly configured HTTPS deployment origins', async () => 
   const liveRequest = (host, origin) => request({ text: 'hello' }, { headers: { host, origin, 'content-type': 'application/json' } });
   const evaluate = async () => ({ action: 'allow' });
   for (const host of ['jev-llm-guard.vercel.app', 'guard-preview.vercel.app']) {
-    assert.equal((await handleApiRequest(liveRequest(host, `https://${host}`), { env: liveEnv, evaluate })).status, 200);
+    assert.equal((await handleApiRequest(liveRequest(host, `https://${host}`), { env: liveEnv, evaluate, reserveQuota: async () => ({ allowed: true }) })).status, 200);
   }
   for (const [host, origin] of [
     ['attacker.vercel.app', 'https://attacker.vercel.app'],
@@ -83,5 +83,56 @@ test('serves the result presentation module used by the demo', async () => {
   assert.match(response.headers['content-type'],/javascript/);
   const module = await import(`data:text/javascript;base64,${Buffer.from(response.body).toString('base64')}`);
   assert.equal(module.buildResultView({action:'block',risks:{}}).action,'block');
+  server.close();
+});
+
+test('quota exhaustion returns 429 and Retry-After without calling Jev', async () => {
+  let calls = 0;
+  const response = await handleApiRequest(request({ text: 'hello' }), {
+    env,
+    reserveQuota: async () => ({ allowed: false, scope: 'ip_daily', retryAfter: 3600 }),
+    evaluate: async () => { calls++; return { action: 'allow' }; },
+  });
+  assert.equal(response.status, 429);
+  assert.equal(response.headers['retry-after'], '3600');
+  assert.equal(response.body.code, 'ip_daily_limit');
+  assert.match(response.body.error, /Daily demo limit reached/);
+  assert.equal(calls, 0);
+});
+
+test('quota store failure stops analysis and does not reveal credentials', async () => {
+  let calls = 0;
+  const response = await handleApiRequest(request({ text: 'hello' }), {
+    env,
+    reserveQuota: async () => { throw new Error('redis-secret'); },
+    evaluate: async () => { calls++; },
+  });
+  assert.equal(response.status, 503);
+  assert.doesNotMatch(JSON.stringify(response), /redis-secret/);
+  assert.equal(calls, 0);
+});
+
+test('invalid input consumes no quota and valid input reserves before evaluation', async () => {
+  const order = [];
+  const options = { env, reserveQuota: async () => { order.push('reserve'); return { allowed: true }; }, evaluate: async () => { order.push('evaluate'); return { action: 'allow' }; } };
+  assert.equal((await handleApiRequest(request({ text: '' }), options)).status, 400);
+  assert.deepEqual(order, []);
+  assert.equal((await handleApiRequest(request({ text: 'hello' }), options)).status, 200);
+  assert.deepEqual(order, ['reserve', 'evaluate']);
+});
+
+test('HTTP server forwards socket IP to quota and preserves 429 Retry-After', async () => {
+  const { EventEmitter } = await import('node:events');
+  const { createDemoServer } = await import('../src/web-server.js');
+  let seen;
+  const server = createDemoServer({ env, reserveQuota: async req => { seen = req.remoteAddress; return { allowed: false, scope: 'global_daily', retryAfter: 3600 }; }, evaluate: async () => { throw new Error('unexpected Jev call'); } });
+  const req = Object.assign(new EventEmitter(), request({ text: 'hello' }), { url: '/api/evaluate', socket: { remoteAddress: '127.0.0.1' } });
+  const response = { writeHead(status, headers) { this.status = status; this.headers = headers; }, end(body) { this.body = JSON.parse(body); } };
+  const pending = server.listeners('request')[0](req, response);
+  req.emit('data', Buffer.from(req.body)); req.emit('end'); await pending;
+  assert.equal(seen, '127.0.0.1');
+  assert.equal(response.status, 429);
+  assert.equal(response.headers['retry-after'], '3600');
+  assert.equal(response.body.code, 'global_daily_limit');
   server.close();
 });

@@ -39,8 +39,27 @@ The exact deployment URL supplied by Vercel is also accepted for previews.
 Never expose the key as a public environment variable or commit `.env`.
 
 For a public demo, configure a Vercel WAF rate limit on POST `/api/evaluate`
-(for example 10 requests per minute per IP). Platform rate limits are regional
-and are not a global Jev spending cap; set a usage budget with the API provider.
+at 5 requests per minute per IP. Platform rate limits are regional.
+The server also reserves shared Redis quotas before calling Jev: **5 analyses
+per minute per IP, 20 per day per IP and 500 total per day**. Daily windows reset
+at 00:00 UTC. Reservations are atomic across concurrent requests and deployments.
+Rejected requests do not increment counters. Accepted attempts count even if Jev
+fails; a lost reservation response is not retried. Quotation clarification can
+make up to three Jev requests per analysis, so these are analysis quotas rather
+than a currency budget. Set a spending budget with the API provider too.
+
+Install Upstash Redis via the Vercel Marketplace with `free`, `autoUpgrade=false`
+and `eviction=false`. Supply server-only `UPSTASH_REDIS_REST_URL` and
+`UPSTASH_REDIS_REST_TOKEN` (or Marketplace `KV_REST_API_URL` and
+`KV_REST_API_TOKEN`), plus a stable random `JEV_QUOTA_SECRET` of at least 32
+characters. IPs are normalized and HMAC hashed; text is never stored in Redis.
+Counters expire at their window boundary. The namespace uses `VERCEL_ENV`, so
+production aliases/deployments share limits while preview traffic is separate.
+Changing the HMAC secret resets per-IP accounting, so keep it stable.
+Public deployments fail closed with 503 if quota settings or Redis are
+unavailable. Local-only demos without Redis settings remain unrestricted.
+IP quotas are shared on the same network and can be bypassed by IP rotation;
+the global cap remains shared. User-specific limits require authentication.
 Requests outside the approved origin are rejected. Origin validation is a
 browser boundary, not authentication for a public endpoint.
 
@@ -171,6 +190,8 @@ and browser demo.
 
 ```sh
 npm test
+JEV_REDIS_TEST_BIN=/path/to/redis/bin node --test test/demo-quota.redis.test.js
+JEV_QUOTA_TEST_CREDENTIALS=/private/quota-only.json node --test test/demo-quota.upstash.test.js
 JEV_LIVE_TEST=1 node --test test/guard.live.test.js
 JEV_QUOTE_LIVE_TEST=1 node --test test/quotation.live.test.js
 npm run eval:research                            # eight-case preview
